@@ -740,7 +740,10 @@ class UploadMethods:
                     request = functions.upload.SaveFilePartRequest(
                         file_id, part_index, part)
 
-                result = await self(request)
+                # NOTE: file part uploads MUST go through the dedicated
+                # media server; the regular connection server rejects them
+                # with 422 FILE_REQUEST_RECEIVED_ON_CONNECTION_SERVER.
+                result = await self._media_call(request)
                 if result:
                     self._log[__name__].debug('Uploaded %d/%d',
                                               part_index + 1, part_count)

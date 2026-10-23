@@ -56,8 +56,17 @@ class _DirectDownloadIter(RequestIter):
         
         self._exported = dc_id and self._client.session.dc_id != dc_id
         if not self._exported:
-            # The used sender will also change if ``FileMigrateError`` occurs
-            self._sender = self.client._sender
+            # File requests (upload.getFile) must go to the media server;
+            # the regular connection server rejects them with
+            # 422 FILE_REQUEST_RECEIVED_ON_CONNECTION_SERVER.
+            try:
+                self._sender = await self.client._get_media_sender()
+            except Exception as e:
+                self.client._log[__name__].warning(
+                    'Could not connect to the media server (%s: %s); '
+                    'falling back to the regular server for downloads',
+                    type(e).__name__, e)
+                self._sender = self.client._sender
         else:
             try:
                 self._sender = await self.client._borrow_exported_sender(dc_id)

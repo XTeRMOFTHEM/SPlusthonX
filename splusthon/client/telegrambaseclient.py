@@ -443,6 +443,124 @@ class SoroushPlusBaseClient(abc.ABC):
             auto_reconnect_callback=self._handle_auto_reconnect
         )
 
+        # Dedicated sender for file transfers (upload.saveFilePart,
+        # upload.saveBigFilePart, upload.getFile). SoroushPlus only accepts
+        # these requests on its *media* servers; sending them to the regular
+        # connection server fails with 422 FILE_REQUEST_RECEIVED_ON_CONNECTION_SERVER.
+        self._media_sender = None
+        self._media_dc_id = None
+        self._media_sender_lock = asyncio.Lock()
+
+    # Media (upload/download) server support
+    #
+    # SoroushPlus splits each data center into a "connection" server and one
+    # or more "media" servers. The official web client (web.splus.ir) routes
+    # all file traffic to the media variant of the current DC:
+    #   DC 1-5 -> im-server-1.splus.ir, DC 6 -> im-server-2.splus.ir,
+    #   DC 8   -> im-server-3.splus.ir
+    MEDIA_DC_SUFFIX = {
+        1: '-1', 2: '-1', 3: '-1', 4: '-1', 5: '-1',
+        6: '-2', 8: '-3'
+    }
+    MEDIA_DC_PORT = 443
+
+    @classmethod
+    def _media_server_address(cls, dc_id):
+        """Return the (ip, port) of the media server for the given DC id."""
+        suffix = cls.MEDIA_DC_SUFFIX.get(dc_id, '-1')
+        return 'im-server{}.splus.ir'.format(suffix), cls.MEDIA_DC_PORT
+
+    async def _get_media_sender(self: 'SoroushClient'):
+        """
+        Return a connected :tl:`MTProtoSender` bound to the media server of
+        the current data center, creating it on first use. The same auth key
+        is reused (media servers belong to the same DC, so the auth key is
+        valid there). The sender is cached and re-created when the DC changes
+        or the connection drops.
+        """
+        if (self._media_sender is not None
+                and self._media_sender.is_connected()
+                and self._media_dc_id == self.session.dc_id):
+            return self._media_sender
+
+        async with self._media_sender_lock:
+            # Re-check after acquiring the lock (another coroutine may have
+            # already created the sender while we were waiting).
+            if (self._media_sender is not None
+                    and self._media_sender.is_connected()
+                    and self._media_dc_id == self.session.dc_id):
+                return self._media_sender
+
+            if self._media_sender is not None:
+                try:
+                    await self._media_sender.disconnect()
+                except Exception:
+                    pass
+                self._media_sender = None
+
+            if self.session.auth_key is None:
+                raise ConnectionError('Cannot create a media sender before being connected')
+
+            ip, port = self._media_server_address(self.session.dc_id)
+            self._log[__name__].info(
+                'Connecting dedicated media sender for DC %d to %s:%s',
+                self.session.dc_id, ip, port)
+
+            sender = MTProtoSender(
+                self.session.auth_key,
+                loggers=self._log,
+                retries=self._connection_retries,
+                delay=self._retry_delay,
+                auto_reconnect=self._auto_reconnect,
+                connect_timeout=self._timeout,
+                updates_queue=asyncio.Queue()
+            )
+            await sender.connect(self._connection(
+                ip,
+                port,
+                self.session.dc_id,
+                loggers=self._log,
+                proxy=self._proxy,
+                local_addr=self._local_addr
+            ))
+
+            self._media_sender = sender
+            self._media_dc_id = self.session.dc_id
+            return sender
+
+    async def _media_call(self: 'SoroushClient', request, ordered=False):
+        """
+        Invoke a file-transfer request through the media server.
+
+        Falls back to the regular connection server if the media server
+        cannot be reached, so behaviour never gets worse than before.
+        """
+        if (self.session is None or self.session.auth_key is None
+                or self._sender is None or not self._sender.is_connected()):
+            return await self(request, ordered=ordered)
+
+        try:
+            sender = await self._get_media_sender()
+        except Exception as e:
+            self._log[__name__].warning(
+                'Could not connect to the media server (%s: %s); '
+                'falling back to the regular server for %s',
+                type(e).__name__, e, request.__class__.__name__)
+            self._media_sender = None
+            return await self(request, ordered=ordered)
+
+        return await self._call(sender, request, ordered=ordered)
+
+    async def _disconnect_media_sender(self: 'SoroushClient'):
+        """Close the dedicated media sender, if any."""
+        if self._media_sender is not None:
+            try:
+                await self._media_sender.disconnect()
+            except Exception:
+                pass
+            self._media_sender = None
+            self._media_dc_id = None
+
 
     # endregion
 
@@ -766,6 +884,7 @@ class SoroushPlusBaseClient(abc.ABC):
         their job with the client is complete and we should clean it up all.
         """
         await self._sender.disconnect()
+        await self._disconnect_media_sender()
         await helpers._cancel(self._log[__name__],
                               updates_handle=self._updates_handle,
                               keepalive_handle=self._keepalive_handle)
