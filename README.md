@@ -24,30 +24,30 @@
 </a>
 
 <a href="LICENSE">
-  <img src="https://img.shields.io/github/license/shayanheidari01/SPlusthon?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/github/license/XTeRMOFTHEM/SPlusthonX?style=for-the-badge" alt="License">
 </a>
 
-<a href="https://github.com/shayanheidari01/SPlusthon/stargazers">
-  <img src="https://img.shields.io/github/stars/shayanheidari01/SPlusthon?style=for-the-badge" alt="Stars">
+<a href="https://github.com/XTeRMOFTHEM/SPlusthonX/stargazers">
+  <img src="https://img.shields.io/github/stars/XTeRMOFTHEM/SPlusthonX?style=for-the-badge" alt="Stars">
 </a>
 
-<a href="https://github.com/shayanheidari01/SPlusthon/issues">
-  <img src="https://img.shields.io/github/issues/shayanheidari01/SPlusthon?style=for-the-badge" alt="Issues">
+<a href="https://github.com/XTeRMOFTHEM/SPlusthonX/issues">
+  <img src="https://img.shields.io/github/issues/XTeRMOFTHEM/SPlusthonX?style=for-the-badge" alt="Issues">
 </a>
 
-<a href="https://github.com/shayanheidari01/SPlusthon/actions">
-  <img src="https://img.shields.io/github/actions/workflow/status/shayanheidari01/SPlusthon/tests.yml?style=for-the-badge" alt="Build">
+<a href="https://github.com/XTeRMOFTHEM/SPlusthonX/actions">
+  <img src="https://img.shields.io/github/actions/workflow/status/XTeRMOFTHEM/SPlusthonX/tests.yml?style=for-the-badge" alt="Build">
 </a>
 
 </p>
 
 <p>
 
-<a href="https://shayanheidari01.github.io/SPlusthon/"><strong>Documentation</strong></a>
+<a href="https://xtermofthem.github.io/SPlusthonX/"><strong>Documentation</strong></a>
 •
 <a href="https://pypi.org/project/splusthon/"><strong>PyPI</strong></a>
 •
-<a href="https://github.com/shayanheidari01/SPlusthon"><strong>GitHub</strong></a>
+<a href="https://github.com/XTeRMOFTHEM/SPlusthonX"><strong>GitHub</strong></a>
 •
 <a href="https://web.splus.ir"><strong>Soroush Plus</strong></a>
 
@@ -93,7 +93,7 @@ pip install splusthon
 یا آخرین نسخه توسعه:
 
 ```bash
-pip install git+https://github.com/shayanheidari01/SPlusthon.git
+pip install git+https://github.com/XTeRMOFTHEM/SPlusthonX.git
 ```
 
 ## شروع سریع
@@ -174,7 +174,7 @@ with SoroushClient(StringSession(session)) as client:
 
 مستندات کامل پروژه:
 
-https://shayanheidari01.github.io/SPlusthon/
+https://xtermofthem.github.io/SPlusthonX/
 
 ## مجوز
 
@@ -184,8 +184,17 @@ https://shayanheidari01.github.io/SPlusthon/
 
 <div align="center">
 
-**Made with ❤️ by Shayan Heidari**
+### ✅ Updated — ویرایش به‌روز
 
-https://github.com/shayanheidari01
+این ریپو **نسخهٔ به‌روزرسانی‌شدهٔ SPlusthon** است — **فورک نیست**.
+
+آخرین نسخه: **v1.1.5**
+- 📡 مسیردهی صحیح آپلود/دانلود فایل از طریق **مدیاسرور** (رفع خطای
+  `422 FILE_REQUEST_RECEIVED_ON_CONNECTION_SERVER`)
+- 🧹 حذف تایپ‌های اضافی و تمیزسازی سورس
+
+**Made with ❤️ by XTeRMOFTHEM**
+
+https://github.com/XTeRMOFTHEM
 
 </div>
